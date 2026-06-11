@@ -59,12 +59,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chosen_url is None:
         chosen_url = random.choices(urls, weights=weights, k=1)[0]
 
-    final_message = bot_data["welcome_message"].format(url=chosen_url)
-    preview_settings = LinkPreviewOptions(is_disabled=not bot_data["preview_enabled"])
+    # Remove {url} from message text so the raw link is never shown
+    final_message = bot_data["welcome_message"].replace("{url}", "").strip()
+    if not final_message:
+        final_message = "Welcome! Click the button below:"
+
+    # Button opens the link directly on click
+    keyboard = [[InlineKeyboardButton("🔗 Open Link", url=chosen_url)]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
         final_message,
-        link_preview_options=preview_settings
+        link_preview_options=LinkPreviewOptions(is_disabled=True),
+        reply_markup=reply_markup
     )
 
 async def download_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
