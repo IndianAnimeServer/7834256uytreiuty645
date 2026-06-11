@@ -16,8 +16,8 @@ DATA_FILE = "bot_data.json"
 
 bot_data = {
     "url_ratios": {
-        "https://t.me/JinFileSaverBot/Getlink": 100,
-        "https://tectuytiurnews.com/parameterlink": 30
+        "https://t.me/JinFileSaverBot/Getlink": 1,
+        "https://thecricket.co.in/universitiestudy/?eduuniversty=": 1
     },
     "users": [],
     "welcome_message": "Welcome! Here is your special link:\n{url}",
@@ -59,18 +59,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chosen_url is None:
         chosen_url = random.choices(urls, weights=weights, k=1)[0]
 
-    # Remove {url} from message text so the raw link is never shown
-    final_message = bot_data["welcome_message"].replace("{url}", "").strip()
-    if not final_message:
-        final_message = "Welcome! Click the button below:"
+    # Link shown in message text
+    final_message = bot_data["welcome_message"].format(url=chosen_url)
+    preview_settings = LinkPreviewOptions(is_disabled=not bot_data["preview_enabled"])
 
-    # Button opens the link directly on click
+    # Button also opens the same link
     keyboard = [[InlineKeyboardButton("🔗 Open Link", url=chosen_url)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
         final_message,
-        link_preview_options=LinkPreviewOptions(is_disabled=True),
+        link_preview_options=preview_settings,
         reply_markup=reply_markup
     )
 
