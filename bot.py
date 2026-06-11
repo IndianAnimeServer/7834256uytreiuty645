@@ -9,14 +9,14 @@ from telegram.error import Forbidden
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # ================= CONFIGURATION =================
-BOT_TOKEN = "8676189999:AAHuKno2TJuYQ6GfStxpUZXXu_TRL5KACyo"
+BOT_TOKEN = "8968673700:AAFXn8leUAbafSlDlWepyFiWWlOG3rzxjak"
 ADMIN_ID = 8506228831
 DATA_FILE = "bot_data.json"
 # =================================================
 
 bot_data = {
     "url_ratios": {
-        "https://jtiutki.in/parameterlink": 70,
+        "https://t.me/JinFileSaverBot/Getlink": 100,
         "https://tectuytiurnews.com/parameterlink": 30
     },
     "users": [],
@@ -44,28 +44,34 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     urls = list(bot_data["url_ratios"].keys())
     weights = list(bot_data["url_ratios"].values())
-    chosen_url = random.choices(urls, weights=weights, k=1)[0]
 
-    param_suffix = ""
+    chosen_url = None
+
+    # Check start parameter for link number (1 = first link, 2 = second link...)
     if context.args:
-        raw_param = context.args[0]
-        try:
-            padding = 4 - len(raw_param) % 4
-            if padding != 4:
-                raw_param += "=" * padding
-            decoded_bytes = raw_param
-            
-            param_suffix = decoded_bytes
-        except Exception:
-            param_suffix = ""
+        raw_param = context.args[0].strip()
+        if raw_param.isdigit():
+            index = int(raw_param) - 1  # convert to 0-based index
+            if 0 <= index < len(urls):
+                chosen_url = urls[index]
 
-    final_url = f"{chosen_url}{param_suffix}" if param_suffix else chosen_url
-    final_message = bot_data["welcome_message"].format(url=final_url)
-    preview_settings = LinkPreviewOptions(is_disabled=not bot_data["preview_enabled"])
+    # Fallback: weighted random if no valid number was given
+    if chosen_url is None:
+        chosen_url = random.choices(urls, weights=weights, k=1)[0]
+
+    # Remove {url} from message text so the raw link is never shown
+    final_message = bot_data["welcome_message"].replace("{url}", "").strip()
+    if not final_message:
+        final_message = "Welcome! Click the button below:"
+
+    # Button opens the link directly on click
+    keyboard = [[InlineKeyboardButton("🔗 Open Link", url=chosen_url)]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
         final_message,
-        link_preview_options=preview_settings
+        link_preview_options=LinkPreviewOptions(is_disabled=True),
+        reply_markup=reply_markup
     )
 
 async def download_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
